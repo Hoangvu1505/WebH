@@ -37,7 +37,6 @@ function App() {
   });
 
   const [onlineCount, setOnlineCount] = useState(1);
-  const [reactions, setReactions] = useState([]);
 
   // Phân quyền: Học sinh (Guest) vs Giáo viên (Teacher)
   const [isTeacherView, setIsTeacherView] = useState(() => {
@@ -124,14 +123,6 @@ function App() {
       }
     };
 
-    // 2. Nhận emoji thả cảm xúc trực tiếp từ các bạn trong lớp
-    const handleReactionBroadcast = (reaction) => {
-      setReactions((prev) => [...prev.slice(-35), reaction]);
-      setTimeout(() => {
-        setReactions((prev) => prev.filter((r) => r.id !== reaction.id));
-      }, 2600);
-    };
-
     socket.on("state:sync", handleStateSync);
     socket.on("users:online", handleUsersOnline);
     socket.on("timer:tick", handleTimerTick);
@@ -139,7 +130,6 @@ function App() {
     socket.on("timer:end", handleTimerEnd);
     socket.on("apply:success", handleApplySuccess);
     socket.on("apply:fail", handleApplyFail);
-    socket.on("reaction:broadcast", handleReactionBroadcast);
 
     const onHashChange = () => {
       setIsTeacherView(window.location.hash === "#teacher");
@@ -154,7 +144,6 @@ function App() {
       socket.off("timer:end", handleTimerEnd);
       socket.off("apply:success", handleApplySuccess);
       socket.off("apply:fail", handleApplyFail);
-      socket.off("reaction:broadcast", handleReactionBroadcast);
       window.removeEventListener("hashchange", onHashChange);
     };
   }, [myPair, teacherToken]);
@@ -217,8 +206,8 @@ function App() {
 
   return (
     <div className={`wrap ${isTeacherView ? "projector-mode" : ""}`}>
-      {/* Hiệu ứng Floating Reactions bay bổng phủ toàn màn hình */}
-      <ReactionOverlay reactions={reactions} />
+      {/* Hiệu ứng Floating Reactions bay bổng phủ toàn màn hình (Độc lập 60 FPS) */}
+      <ReactionOverlay />
 
       <Header
         config={state.config}
