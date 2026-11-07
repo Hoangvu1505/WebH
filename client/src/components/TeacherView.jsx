@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { socket } from "../socket";
 
 const STATUS_LABELS = {
@@ -25,6 +25,9 @@ export default function TeacherView({
   const [manualPair, setManualPair] = useState("");
   const [manualRole, setManualRole] = useState("welcome");
   const [troubleMsg, setTroubleMsg] = useState("");
+
+  // QR Zoom Modal
+  const [qrZoomed, setQrZoomed] = useState(false);
 
   const {
     config,
@@ -202,9 +205,9 @@ export default function TeacherView({
 
         {/* Khối hiển thị & chỉnh sửa TIME REMAINING */}
         <div className="timer-control-cluster">
-          <div className={`countdown-box ${isUrgent ? "warning" : ""}`} style={{ margin: 0, padding: "8px 14px" }}>
+          <div className={`countdown-box ${isUrgent ? "warning" : ""}`} style={{ margin: 0, padding: "8px 18px" }}>
             <span className="countdown-label" style={{ marginRight: "8px" }}>TIME REMAINING:</span>
-            <span className="countdown-digits">{formatTime(timeRemaining)}</span>
+            <span className="countdown-digits countdown-digits-large">{formatTime(timeRemaining)}</span>
           </div>
 
           <button
@@ -450,10 +453,56 @@ export default function TeacherView({
           className="qr-image"
           src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(studentURL)}`}
         />
-        <div style={{ fontSize: "12px", color: "var(--muted)", wordBreak: "break-all" }}>
+        <div style={{ marginTop: "8px" }}>
+          <button
+            className="qr-zoom-btn"
+            onClick={() => setQrZoomed(true)}
+            title="Enlarge QR code for students to scan"
+          >
+            🔍 Phóng to QR
+          </button>
+        </div>
+        <div style={{ fontSize: "12px", color: "var(--muted)", wordBreak: "break-all", marginTop: "6px" }}>
           Direct Link: <a href={studentURL} target="_blank" rel="noreferrer" style={{ color: "var(--primary-green)", fontWeight: "700" }}>{studentURL}</a>
         </div>
       </div>
+
+      {/* QR ZOOM MODAL */}
+      {qrZoomed && (
+        <div
+          className="qr-modal-backdrop"
+          onClick={() => setQrZoomed(false)}
+        >
+          <div
+            className="qr-modal-content"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="qr-modal-close"
+              onClick={() => setQrZoomed(false)}
+              title="Close"
+            >
+              ✕
+            </button>
+            <div style={{ marginBottom: "14px", fontSize: "15px", fontWeight: "900", color: "var(--primary-green)", letterSpacing: "0.04em" }}>
+              📱 Scan to Join!
+            </div>
+            <img
+              alt="Student QR Code (Enlarged)"
+              width={340}
+              height={340}
+              style={{ borderRadius: "16px", display: "block" }}
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=340x340&data=${encodeURIComponent(studentURL)}`}
+            />
+            <div style={{ marginTop: "14px", fontSize: "13px", color: "#555", wordBreak: "break-all", maxWidth: "340px", textAlign: "center", lineHeight: "1.5" }}>
+              <a href={studentURL} target="_blank" rel="noreferrer" style={{ color: "var(--primary-green)", fontWeight: "800" }}>{studentURL}</a>
+            </div>
+            <div style={{ marginTop: "8px", fontSize: "12px", color: "var(--muted)" }}>
+              Tap anywhere outside to close
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
