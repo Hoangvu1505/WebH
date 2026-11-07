@@ -1,0 +1,17 @@
+{
+  "name": "buzz-to-apply-fullstack",
+  "version": "1.0.0",
+  "description": "Hệ thống Buzz To Apply thời gian thực hỗ trợ 50+ người dùng đồng thời",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "build": "npm --prefix client run build",
+    "start": "node server/server.js",
+    "server": "node --watch server/server.js",
+    "client": "npm --prefix client run dev",
+    "dev": "node dev-runner.js"
+  },
+  "keywords": ["react", "socket.io", "express", "realtime", "classroom", "buzzer"],
+  "author": "",
+  "license": "MIT"
+}
+

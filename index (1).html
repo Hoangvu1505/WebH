@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BUZZ TO APPLY!</title>
+<style>
+  :root{
+    --blue:#a9c8ff; --purple:#c9b6ff; --peach:#ffcdb8; --pink:#ffc2dc;
+    --ink:#2f2a4a; --muted:#7a7596; --card:#ffffffd9; --ok:#6fd1a3; --bad:#ff8fa3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font-family:"Segoe UI",system-ui,-apple-system,sans-serif;color:var(--ink);
+    background:linear-gradient(135deg,var(--blue) 0%,var(--purple) 50%,var(--peach) 100%);
+    display:flex;justify-content:center;padding:20px 14px 40px}
+  .wrap{width:100%;max-width:560px}
+  header{text-align:center;margin-bottom:14px}
+  .tag{font-size:12px;letter-spacing:.14em;font-weight:700;color:#5b5580}
+  h1{margin:4px 0 2px;font-size:34px;letter-spacing:.02em}
+  .sub{color:var(--muted);font-size:14px}
+  .card{background:var(--card);backdrop-filter:blur(6px);border-radius:22px;padding:18px;margin-top:14px;
+    box-shadow:0 8px 30px #6b5fb633}
+  .status{display:inline-block;padding:5px 14px;border-radius:99px;font-weight:700;font-size:13px;letter-spacing:.06em}
+  .st-waiting{background:#fff3c9;color:#8a6d00}
+  .st-open{background:#c9f5df;color:#17714a}
+  .st-closed{background:#ffd9e0;color:#a22c46}
+  .groups{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+  .gbtn{border:2px solid transparent;background:#fff;border-radius:14px;padding:12px 0;font-weight:700;font-size:16px;color:var(--ink);cursor:pointer}
+  .gbtn:active{transform:scale(.96)}
+  .gbtn.taken{background:#eee;color:#aaa}
+  .role{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px;margin-top:12px}
+  .role .emo{font-size:36px}
+  .role .info{flex:1}
+  .role .name{font-weight:800;font-size:18px}
+  .role .slots{color:var(--muted);font-size:14px}
+  .apply{border:0;border-radius:14px;padding:14px 20px;font-weight:800;font-size:16px;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,#7f9cff,#b08bff);box-shadow:0 6px 16px #8a7cff66}
+  .apply:active{transform:scale(.95)}
+  .apply:disabled{background:#cfcbe0;box-shadow:none;cursor:not-allowed}
+  .big{text-align:center;padding:26px 10px}
+  .big .emo{font-size:60px}
+  .big h2{margin:8px 0 4px;font-size:28px}
+  .success h2{color:#17714a}
+  .full h2{color:#c0344f}
+  .msg{border-radius:14px;padding:12px;margin-top:12px;font-weight:600;text-align:center}
+  .msg.bad{background:#ffe1e7;color:#a22c46}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  .btn{border:0;border-radius:14px;padding:12px 18px;font-weight:800;font-size:15px;cursor:pointer;color:#fff}
+  .b-start{background:linear-gradient(135deg,#5fcf9b,#46b7c9)}
+  .b-close{background:linear-gradient(135deg,#ffa7a7,#ff8fb0)}
+  .b-reset{background:#8b86a8}
+  .board{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+  .cell{background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:space-between;font-weight:700}
+  .cell.done{background:#d9f7e8}
+  .small{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+  .demo{display:inline-block;background:#fff;color:#7d5cff;border-radius:8px;padding:2px 8px;font-size:11px;font-weight:800;margin-left:6px}
+  .qr{display:block;margin:12px auto 0;border-radius:12px;background:#fff;padding:8px}
+  a{color:#6a5acd}
+  .hide{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="tag">GRADE 10 • UNIT 5: AMBITION</div>
+    <h1>BUZZ TO APPLY!<span id="demoBadge" class="demo hide">DEMO</span></h1>
+    <div class="sub">Volunteer Recruitment — Grab your spot!</div>
+  </header>
+  <div id="app"></div>
+  <div class="small" id="foot"></div>
+</div>
+
+<script type="module">
+/* ================= CẤU HÌNH ================= */
+const CONFIG = {
+  // Dán cấu hình Firebase của bạn vào đây (xem HUONG-DAN.md). Để trống = chạy DEMO trên 1 thiết bị.
+  firebase: {
+    apiKey: "",
+    authDomain: "",
+    databaseURL: "",
+    projectId: "",
+    appId: ""
+  },
+  teacherPin: "1234",        // ĐỔI mã này trước khi dùng
+  groups: 10,
+  roles: [
+    { id: "welcome", emoji: "👋", name: "Welcome Team", cap: 4 },
+    { id: "card",    emoji: "💌", name: "Card Team",    cap: 3 },
+    { id: "photo",   emoji: "📸", name: "Photo Helper", cap: 3 }
+  ]
+};
+/* ============================================ */
+
+const GROUPS = Array.from({length: CONFIG.groups}, (_, i) => "G" + (i + 1));
+const TOTAL = CONFIG.roles.reduce((s, r) => s + r.cap, 0);
+const roleById = Object.fromEntries(CONFIG.roles.map(r => [r.id, r]));
+const isTeacher = location.hash === "#teacher" || new URLSearchParams(location.search).has("teacher");
+const useFirebase = !!CONFIG.firebase.databaseURL;
+
+/* ---- Logic thuần: dùng chung cho cả Firebase transaction và demo ---- */
+function normalize(s) {
+  s = s || {};
+  return { status: s.status || "waiting", assign: s.assign || {} };
+}
+function counts(s) {
+  const c = {}; CONFIG.roles.forEach(r => c[r.id] = 0);
+  Object.values(s.assign).forEach(r => { if (c[r] !== undefined) c[r]++; });
+  return c;
+}
+function reduce(cur, action) {
+  const s = normalize(cur);
+  if (action.type === "start") { if (s.status === "waiting") s.status = "open"; return s; }
+  if (action.type === "close") { s.status = "closed"; return s; }
+  if (action.type === "reset") { return { status: "waiting", assign: {} }; }
+  if (action.type === "apply") {
+    if (s.status !== "open") return s;
+    if (s.assign[action.group]) return s;                 // mỗi nhóm chỉ 1 suất
+    const c = counts(s);
+    if (!roleById[action.role] || c[action.role] >= roleById[action.role].cap) return s; // role đã đầy
+    s.assign[action.group] = action.role;
+    if (Object.keys(s.assign).length >= TOTAL) s.status = "closed";
+    return s;
+  }
+  return s;
+}
+
+/* ---- Backend ---- */
+let backend;
+if (useFirebase) {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+  const { getDatabase, ref, onValue, runTransaction } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js");
+  const app = initializeApp(CONFIG.firebase);
+  const db = getDatabase(app);
+  const eventRef = ref(db, "event");
+  backend = {
+    subscribe(cb) { onValue(eventRef, snap => cb(normalize(snap.val()))); },
+    async dispatch(action) {
+      // Transaction: Firebase xử lý tuần tự, không bao giờ vượt quá số suất
+      const res = await runTransaction(eventRef, cur => reduce(cur, action));
+      return normalize(res.snapshot.val());
+    }
+  };
+} else {
+  const KEY = "buzz-demo-event";
+  const bc = "BroadcastChannel" in window ? new BroadcastChannel("buzz-demo") : null;
+  const read = () => { try { return normalize(JSON.parse(localStorage.getItem(KEY))); } catch { return normalize(null); } };
+  let listener = () => {};
+  const emit = () => listener(read());
+  bc && (bc.onmessage = emit);
+  window.addEventListener("storage", e => { if (e.key === KEY) emit(); });
+  backend = {
+    subscribe(cb) { listener = cb; emit(); },
+    async dispatch(action) {
+      const next = reduce(read(), action);
+      localStorage.setItem(KEY, JSON.stringify(next));
+      bc && bc.postMessage(1); emit();
+      return next;
+    }
+  };
+  document.getElementById("demoBadge").classList.remove("hide");
+}
+
+/* ---- Giao diện ---- */
+const app = document.getElementById("app");
+const foot = document.getElementById("foot");
+let state = normalize(null);
+let myGroup = localStorage.getItem("buzz-group") || "";
+let notice = "";
+let teacherOK = false;
+
+const statusLabel = { waiting: "WAITING…", open: "OPEN", closed: "CLOSED" };
+const statusPill = s => `<span class="status st-${s}">${statusLabel[s]}</span>`;
+
+function render() {
+  isTeacher ? renderTeacher() : renderStudent();
+  foot.textContent = useFirebase
+    ? "Kết nối thời gian thực."
+    : "Chế độ DEMO: chỉ đồng bộ giữa các tab trên cùng một thiết bị. Điền cấu hình Firebase để chạy thật.";
+}
+
+function renderStudent() {
+  if (!myGroup) {
+    app.innerHTML = `<div class="card"><b>Chọn mã nhóm của bạn</b>
+      <div class="groups">${GROUPS.map(g => `<button class="gbtn" data-g="${g}">${g}</button>`).join("")}</div>
+      <div class="small">Chỉ 1 đại diện mỗi nhóm cầm điện thoại.</div></div>`;
+    app.querySelectorAll("[data-g]").forEach(b => b.onclick = () => {
+      myGroup = b.dataset.g; localStorage.setItem("buzz-group", myGroup); render();
+    });
+    return;
+  }
+  const mine = state.assign[myGroup];
+  const c = counts(state);
+  let html = `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center">
+      <b>Group ${myGroup}</b>${statusPill(state.status)}</div>`;
+
+  if (mine) {
+    const r = roleById[mine];
+    html += `<div class="big success"><div class="emo">${r.emoji}</div><h2>SUCCESS!</h2>
+      <div>Nhóm ${myGroup} đã giành suất <b>${r.name}</b></div></div>`;
+  } else if (state.status === "waiting") {
+    html += `<div class="big"><div class="emo">⏳</div><h2>Chờ giáo viên bấm START</h2>
+      <div class="sub">Giữ màn hình này mở nhé!</div></div>`;
+  } else if (state.status === "closed") {
+    html += `<div class="big full"><div class="emo">🔒</div><h2>Đã đóng đăng ký</h2>
+      <div class="sub">Hãy báo giáo viên nếu nhóm chưa có role.</div></div>`;
+  } else {
+    if (notice) html += `<div class="msg bad">${notice}</div>`;
+    html += CONFIG.roles.map(r => {
+      const left = r.cap - c[r.id];
+      return `<div class="role"><div class="emo">${r.emoji}</div>
+        <div class="info"><div class="name">${r.name}</div>
+        <div class="slots">${left > 0 ? left + " / " + r.cap + " slots" : "No slots left"}</div></div>
+        <button class="apply" data-r="${r.id}" ${left <= 0 ? "disabled" : ""}>${left > 0 ? "APPLY!" : "FULL!"}</button></div>`;
+    }).join("");
+  }
+  html += `<div class="row"><button class="btn b-reset" id="chg">Đổi nhóm</button></div></div>`;
+  app.innerHTML = html;
+
+  app.querySelectorAll("[data-r]").forEach(b => b.onclick = async () => {
+    const role = b.dataset.r;
+    notice = "";
+    app.querySelectorAll(".apply").forEach(x => x.disabled = true);
+    const res = await backend.dispatch({ type: "apply", group: myGroup, role });
+    if (res.assign[myGroup] !== role && !res.assign[myGroup]) {
+      notice = res.status !== "open" ? "Đăng ký đã đóng!" : "Sorry! This role is full. Choose another role!";
+    }
+    render();
+  });
+  const chg = document.getElementById("chg");
+  if (chg) chg.onclick = () => { if (!mine || confirm("Đổi nhóm trên thiết bị này?")) { myGroup = ""; localStorage.removeItem("buzz-group"); render(); } };
+}
+
+function renderTeacher() {
+  if (!teacherOK) {
+    app.innerHTML = `<div class="card"><b>Màn hình giáo viên</b>
+      <div class="row"><input id="pin" type="password" placeholder="Mã PIN" style="flex:1;padding:12px;border-radius:12px;border:2px solid #d8d2f2;font-size:16px">
+      <button class="btn b-start" id="ok">Vào</button></div></div>`;
+    document.getElementById("ok").onclick = () => {
+      if (document.getElementById("pin").value === CONFIG.teacherPin) { teacherOK = true; render(); }
+      else alert("Sai mã PIN");
+    };
+    return;
+  }
+  const c = counts(state);
+  const done = Object.keys(state.assign).length;
+  const studentURL = location.href.split("#")[0].split("?")[0];
+  app.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center"><b>Teacher panel</b>${statusPill(state.status)}</div>
+    <div class="row">
+      <button class="btn b-start" id="start" ${state.status !== "waiting" ? "disabled" : ""}>▶ START</button>
+      <button class="btn b-close" id="close" ${state.status === "closed" ? "disabled" : ""}>■ Đóng</button>
+      <button class="btn b-reset" id="reset">↺ RESET</button>
+    </div>
+    <div class="small" style="text-align:left">Đã giành suất: <b>${done}/${TOTAL}</b></div>
+    ${CONFIG.roles.map(r => `<div class="role"><div class="emo">${r.emoji}</div><div class="info"><div class="name">${r.name}</div>
+      <div class="slots">${c[r.id]} / ${r.cap} — ${GROUPS.filter(g => state.assign[g] === r.id).join(", ") || "—"}</div></div></div>`).join("")}
+    <div class="board">${GROUPS.map(g => {
+      const r = state.assign[g];
+      return `<div class="cell ${r ? "done" : ""}"><span>${g}</span><span>${r ? roleById[r].emoji + " " + roleById[r].name.split(" ")[0] : "…"}</span></div>`;
+    }).join("")}</div>
+    <img class="qr" alt="QR" width="180" height="180" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(studentURL)}">
+    <div class="small">QR cho học sinh: ${studentURL}</div></div>`;
+  document.getElementById("start").onclick = () => backend.dispatch({ type: "start" });
+  document.getElementById("close").onclick = () => backend.dispatch({ type: "close" });
+  document.getElementById("reset").onclick = () => { if (confirm("Xóa toàn bộ kết quả và đưa về WAITING?")) backend.dispatch({ type: "reset" }); };
+}
+
+window.addEventListener("hashchange", () => location.reload());
+backend.subscribe(s => {
+  state = s;
+  if (state.status !== "open") notice = "";
+  render();
+});
+render();
+</script>
+</body>
+</html>

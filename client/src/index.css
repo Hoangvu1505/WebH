@@ -1,0 +1,40 @@
+:root {
+  /* Bảng màu chuẩn theo Brief & Specific: Dark Green, Cream, Warm Orange, Yellow, Mint */
+  --bg-dark-green: #1b4332;
+  --primary-green: #2d6a4f;
+  --mint: #52b788;
+  --mint-light: #d8f3dc;
+  --cream: #fefae0;
+  --cream-card: rgba(254, 250, 224, 0.94);
+  --warm-orange: #e76f51;
+  --orange-light: #f4a261;
+  --school-yellow: #e9c46a;
+  --ink: #1e2922;
+  --muted: #5c6b61;
+  
+  --font-main: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Roboto", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-main);
+  color: var(--ink);
+  /* Background phong cách trường học / bảng thông báo ấm áp */
+  background: radial-gradient(circle at 10% 20%, #245741 0%, #153b2b 90%);
+  background-attachment: fixed;
+  display: flex;
+  justify-content: center;
+  padding: 16px 12px 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}

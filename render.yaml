@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: buzz-to-apply-recruitment
+    env: node
+    plan: free
+    buildCommand: npm run install:all && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: TEACHER_PIN
+        value: 3568
+      - key: NODE_ENV
+        value: production
+
